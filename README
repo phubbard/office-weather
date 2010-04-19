@@ -1,0 +1,30 @@
+
+Paul Hubbard pfhubbard@ucsd.edu
+April 19 2010
+
+This project is Arduino and Python/Twisted code to implement a simplest-
+possible 'office weather station' that presents temperature and relative
+humidity readings via a webserver interface.
+
+The sensors are:
+ * LM35CAZ Nice, TO-92 cased, temperature sensor with 0-5VDC output and no
+   external components required. A few bucks from National.
+   http://www.national.com/mpf/LM/LM35.html#Overview
+ * Ohmic Instruments SC-600 humidity sensor and signal conditioning module.
+   http://www.ohmicinstruments.com/pdf/SC-600.pdf
+   About $15, quite cheap for a sensor this nice. You need an external RC
+   lowpass, so two more components in the circuit. See the PDF.
+
+Software:
+ * The Arduino sketch simply sends the two ADC counts, as integers, on
+   a single text line once per second, nothing else.
+ * The Python code, implemented as a Twisted app, uses their LineReceiver
+   class to get notifications of each new line, after which it does the 
+   parsing, linearization and units. Overkill but simple.
+
+   The twisted code also adds a simplest-possible HTTP interface, running on
+   port 2000. The format used is designed for ingestion into Cacti, for nice
+   time-based RRD graphs.
+
+
+
