@@ -19,11 +19,16 @@ from twisted.protocols.basic import LineReceiver
 
 from twisted.internet import reactor
 from twisted.internet.serialport import SerialPort
+from twisted.web import server, resource, client
 
 from twisted.python import usage
 import logging
 import sys
+import time
 
+lastTemp = 0.0
+lastRH = 0.0
+lastTimestamp = 0
 
 class THOptions(usage.Options):
     optParameters = [
@@ -31,11 +36,21 @@ class THOptions(usage.Options):
         ['port', 'p', '/dev/tty.usbserial-A6008hB0', 'Serial port to use'],
         ]
 
+class indexPage(resource.Resource):
+    isLeaf = True
+
+    def render_GET(self, request):
+        ccStr = ' Temp:%f Humidity:%f\n' % (lastTemp, lastRH)
+        return ccStr
+
 class Echo(LineReceiver):
     def processData(self, data):
         """Convert raw ADC counts into SI units as per datasheets"""
+        # Skip bad reads
         if len(data) != 2:
             return
+
+        global lastTemp, lastRH, lastTimestamp
 
         tempCts = int(data[0])
         rhCts = int(data[1])
@@ -43,14 +58,27 @@ class Echo(LineReceiver):
         rhVolts = rhCts * 0.0048828125
         # 10mV/degree, 1024 count/5V
         temp = tempCts * 0.48828125
-        # TODO need to rewrite this to include thermal compensation as per SC600 datasheet!
+        # RH temp correction is -0.7% per deg C
+        rhcf = (-0.7 * (temp - 25.0)) / 100.0
+
+        # Uncorrected humidity
         humidity = (rhVolts * 45.25) - 42.76
-        logging.info('Temp: %f C Relative humidity: %f %%' % (temp, humidity))
-        logging.debug('Temp: %f counts: %d RH: %f counts: %d volts: %f' % (temp, tempCts, humidity, rhCts, rhVolts))
+
+        # Add correction factor
+        humidity = humidity + (rhcf * humidity)
+
+        lastTemp = temp
+        lastRH = humidity
+        # Update screen now and then
+        if (time.time() - lastTimestamp) > 20.0:
+            logging.info('Temp: %f C Relative humidity: %f %%' % (temp, humidity))
+            logging.debug('Temp: %f counts: %d RH: %f counts: %d volts: %f' % (temp, tempCts, humidity, rhCts, rhVolts))
+            lastTimestamp = time.time()
+
         return temp, humidity
 
     def connectionMade(self):
-        logging.info('Connection made!')
+        logging.info('Serial connection made!')
 
     def lineReceived(self, line):
         try:
@@ -80,4 +108,11 @@ if __name__ == '__main__':
 
     logging.debug('About to open port %s' % port)
     s = SerialPort(Echo(), port, reactor, baudrate=baudrate)
+
+    # HTTP interface
+    logging.debug('Setting up webserver on http://localhost:2000/')
+    root = indexPage()
+    site = server.Site(root)
+    reactor.listenTCP(2000, site)
+
     reactor.run()

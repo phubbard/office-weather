@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- Komodo Project File - DO NOT EDIT -->
-<project id="6bc9f14a-e197-b841-a91e-37d4ed6be389" kpf_version="4" name="Arduino listener.kpf">
-<preference-set idref="6bc9f14a-e197-b841-a91e-37d4ed6be389">
-  <boolean id="import_live">1</boolean>
-</preference-set>
-</project>
