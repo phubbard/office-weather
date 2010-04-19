@@ -15,6 +15,9 @@ The sensors are:
    About $15, quite cheap for a sensor this nice. You need an external RC
    lowpass, so two more components in the circuit. See the PDF.
 
+Here's a picture:
+ http://github.com/phubbard/office-weather/raw/master/sensors.jpg
+
 Software:
  * The Arduino sketch simply sends the two ADC counts, as integers, on
    a single text line once per second, nothing else.
@@ -26,5 +29,8 @@ Software:
    port 2000. The format used is designed for ingestion into Cacti, for nice
    time-based RRD graphs.
 
-
+Notes:
+ * The Mac Mini I'm using to host this has to have the Arduino drivers in
+   place to use the virtual serial port for communications.
+ * I'm debating an ethernet shield, but $50 seems overpriced for now.
 
